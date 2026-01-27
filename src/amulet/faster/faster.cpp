@@ -12,16 +12,29 @@ public:
     {
     }
 
-    std::string get(std::string_view key)
+    // std::string get(std::string_view key)
+    //{
+    //     return "test";
+    // }
+
+    // void set(std::string_view key, std::string_view value)
+    //{
+    // }
+
+    // void remove(std::string_view key)
+    //{
+    // }
+
+    std::uint64_t get(std::uint64_t key)
     {
-        return "test";
+        return 0;
     }
 
-    void set(std::string_view key, std::string_view value)
+    void set(std::uint64_t key, std::uint64_t value)
     {
     }
 
-    void remove(std::string_view key)
+    void remove(std::uint64_t key)
     {
     }
 };
@@ -37,17 +50,32 @@ FasterKV::~FasterKV()
     _impl = nullptr;
 }
 
-std::string FasterKV::get(std::string_view key) const
+// std::string FasterKV::get(std::string_view key) const
+//{
+//     return _impl->get(key);
+// }
+//
+// void FasterKV::set(std::string_view key, std::string_view value)
+//{
+//     _impl->set(key, value);
+// }
+//
+// void FasterKV::remove(std::string_view key)
+//{
+//     _impl->remove(key);
+// }
+
+std::uint64_t FasterKV::get(std::uint64_t key) const
 {
     return _impl->get(key);
 }
 
-void FasterKV::set(std::string_view key, std::string_view value)
+void FasterKV::set(std::uint64_t key, std::uint64_t value)
 {
     _impl->set(key, value);
 }
 
-void FasterKV::remove(std::string_view key)
+void FasterKV::remove(std::uint64_t key)
 {
     _impl->remove(key);
 }

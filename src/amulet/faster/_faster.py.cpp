@@ -20,40 +20,62 @@ void init_module(py::module m)
     FasterKV.def(
         py::init<std::filesystem::path>(),
         py::arg("directory"));
+    // FasterKV.def(
+    //     "get",
+    //     [](const Amulet::FasterKV& self, py::bytes key) -> py::bytes {
+    //         std::string_view key_view = key;
+    //         std::string value;
+    //         {
+    //             py::gil_scoped_release nogil;
+    //             value = self.get(key_view);
+    //         }
+    //         return py::bytes(value);
+    //     },
+    //     py::arg("key"));
+    // FasterKV.def(
+    //     "set",
+    //     [](Amulet::FasterKV& self, py::bytes key, py::bytes value) {
+    //         std::string_view key_view = key;
+    //         std::string_view value_view = value;
+    //         {
+    //             py::gil_scoped_release nogil;
+    //             self.set(key_view, value_view);
+    //         }
+    //     },
+    //     py::arg("key"),
+    //     py::arg("value"));
+    // FasterKV.def(
+    //     "remove",
+    //     [](Amulet::FasterKV& self, py::bytes key) {
+    //         std::string_view key_view = key;
+    //         {
+    //             py::gil_scoped_release nogil;
+    //             self.remove(key_view);
+    //         }
+    //     },
+    //     py::arg("key"));
     FasterKV.def(
         "get",
-        [](const Amulet::FasterKV& self, py::bytes key) -> py::bytes {
-            std::string_view key_view = key;
-            std::string value;
-            {
-                py::gil_scoped_release nogil;
-                value = self.get(key_view);
-            }
-            return py::bytes(value);
+        [](const Amulet::FasterKV& self, std::uint64_t key) {
+            return self.get(key);
         },
-        py::arg("key"));
+        py::arg("key"),
+        py::call_guard<py::gil_scoped_release>());
     FasterKV.def(
         "set",
-        [](Amulet::FasterKV& self, py::bytes key, py::bytes value) {
-            std::string_view key_view = key;
-            std::string_view value_view = value;
-            {
-                py::gil_scoped_release nogil;
-                self.set(key_view, value_view);
-            }
+        [](Amulet::FasterKV& self, std::uint64_t key, std::uint64_t value) {
+            self.set(key, value);
         },
-        py::arg("key"), 
-        py::arg("value"));
+        py::arg("key"),
+        py::arg("value"),
+        py::call_guard<py::gil_scoped_release>());
     FasterKV.def(
         "remove",
-        [](Amulet::FasterKV& self, py::bytes key) {
-            std::string_view key_view = key;
-            {
-                py::gil_scoped_release nogil;
-                self.remove(key_view);
-            }
+        [](Amulet::FasterKV& self, std::uint64_t key) {
+            self.remove(key);
         },
-        py::arg("key"));
+        py::arg("key"),
+        py::call_guard<py::gil_scoped_release>());
 }
 
 PYBIND11_MODULE(_faster, m)
