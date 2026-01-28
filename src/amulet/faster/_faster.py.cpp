@@ -16,7 +16,7 @@ void init_module(py::module m)
 {
     pyext::init_compiler_config(m);
 
-    py::classh<Amulet::FasterKV> FasterKV(m, "FasterKV");
+    py::classh<Amulet::Faster::FasterKV> FasterKV(m, "FasterKV");
     FasterKV.def(
         py::init<std::filesystem::path>(),
         py::arg("directory"));
@@ -56,14 +56,14 @@ void init_module(py::module m)
     //     py::arg("key"));
     FasterKV.def(
         "get",
-        [](const Amulet::FasterKV& self, std::uint64_t key) {
+        [](const Amulet::Faster::FasterKV& self, std::uint64_t key) {
             return self.get(key);
         },
         py::arg("key"),
         py::call_guard<py::gil_scoped_release>());
     FasterKV.def(
         "set",
-        [](Amulet::FasterKV& self, std::uint64_t key, std::uint64_t value) {
+        [](Amulet::Faster::FasterKV& self, std::uint64_t key, std::uint64_t value) {
             self.set(key, value);
         },
         py::arg("key"),
@@ -71,7 +71,7 @@ void init_module(py::module m)
         py::call_guard<py::gil_scoped_release>());
     FasterKV.def(
         "remove",
-        [](Amulet::FasterKV& self, std::uint64_t key) {
+        [](Amulet::Faster::FasterKV& self, std::uint64_t key) {
             self.remove(key);
         },
         py::arg("key"),
