@@ -56,7 +56,7 @@ void init_module(py::module m)
     //     py::arg("key"));
     FasterKV.def(
         "get",
-        [](const Amulet::Faster::FasterKV& self, std::uint64_t key) {
+        [](Amulet::Faster::FasterKV& self, std::uint64_t key) {
             return self.get(key);
         },
         py::arg("key"),

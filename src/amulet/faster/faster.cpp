@@ -88,10 +88,8 @@ namespace Faster {
         {
         }
 
-        // Required by FASTER
         const Key& key() const { return k; }
 
-        // Called by FASTER on successful read (synchronous path).
         void Get(const value_t& value)
         {
             v = value;
@@ -125,6 +123,7 @@ namespace Faster {
         }
 
         const Key& key() const { return k; }
+        uint32_t value_size() const { return static_cast<uint32_t>(sizeof(value_t)); }
 
         // Called by FASTER to populate the record's value portion.
         void Put(value_t& dst) { dst = v; }
@@ -133,9 +132,6 @@ namespace Faster {
             dst = v;
             return true;
         }
-
-        // Size of the value being written.
-        uint32_t value_size() const { return static_cast<uint32_t>(sizeof(value_t)); }
 
     protected:
         FASTER::core::Status DeepCopy_Internal(FASTER::core::IAsyncContext*& context_copy) final
@@ -147,11 +143,14 @@ namespace Faster {
     struct DeleteContext : public FASTER::core::IAsyncContext {
         using key_t = Key;
         using value_t = Value;
+
         key_t k;
+
         DeleteContext(std::uint64_t key)
             : k { key }
         {
         }
+
         const Key& key() const { return k; }
         uint32_t value_size() const { return static_cast<uint32_t>(sizeof(value_t)); }
 
@@ -164,7 +163,7 @@ namespace Faster {
 
     class FasterKVImpl {
     private:
-        std::unique_ptr<DB> _store;
+        std::unique_ptr<DB> _db;
 
     public:
         FasterKVImpl(std::filesystem::path directory)
@@ -172,51 +171,64 @@ namespace Faster {
             // Convert directory to string and ensure trailing separator is handled by FASTER.
             std::string dir = directory.string();
 
-            // Index table size (power of two). 1<<20 = 1,048,576 buckets.
-            uint64_t index_table_size = 2ull << 20;
+            // Index table size (power of two).
+            uint64_t index_table_size = 1ull << 21;
 
             // In-memory hybrid log size
             uint64_t hlog_mem_size = 1ull << 30;
 
             // Build index config and create the FasterKv store.
-            typename DB::IndexConfig index_config { index_table_size };
-            _store = std::make_unique<DB>(index_config, hlog_mem_size, dir);
+            DB::IndexConfig index_config { index_table_size };
+            _db = std::make_unique<DB>(index_config, hlog_mem_size, dir);
         }
 
         ~FasterKVImpl() = default;
 
+        FasterKVImpl(const FasterKVImpl&) = delete;
+        FasterKVImpl& operator=(const FasterKVImpl&) = delete;
+        FasterKVImpl(FasterKVImpl&&) = delete;
+        FasterKVImpl& operator=(FasterKVImpl&&) = delete;
+
         std::optional<std::uint64_t> get(std::uint64_t key)
         {
-            // Start a session on this thread, perform the read, then stop the session.
-            _store->StartSession();
-            ReadContext ctx(key);
-            auto status = _store->Read(ctx, nullptr, /*monotonic_serial_num=*/1);
-            _store->StopSession();
-
             using Status = FASTER::core::Status;
-            if (status == Status::Ok && ctx.found) {
+
+            // Start a session on this thread, perform the read, then stop the session.
+            _db->StartSession();
+            ReadContext ctx(key);
+            auto status = _db->Read(ctx, nullptr, 1);
+            if (status == Status::Pending) {
+                _db->CompletePending(true);
+            }
+            _db->StopSession();
+
+            if (ctx.found) {
                 return ctx.v.v;
             }
 
-            // Not found or error -> return 0 (the Python binding currently expects a uint64_t).
-            // Consider changing to an optional/exception in future if you need to signal "not found".
             return std::nullopt;
         }
 
         void set(std::uint64_t key, std::uint64_t value)
         {
-            _store->StartSession();
+            _db->StartSession();
             UpsertContext uc(key, value);
-            _store->Upsert(uc, nullptr, /*monotonic_serial_num=*/1);
-            _store->StopSession();
+            auto status = _db->Upsert(uc, nullptr, 1);
+            if (status == FASTER::core::Status::Pending) {
+                _db->CompletePending(true);
+            }
+            _db->StopSession();
         }
 
         void remove(std::uint64_t key)
         {
-            _store->StartSession();
+            _db->StartSession();
             DeleteContext dc(key);
-            _store->Delete(dc, nullptr, /*monotonic_serial_num=*/1);
-            _store->StopSession();
+            auto status = _db->Delete(dc, nullptr, 1);
+            if (status == FASTER::core::Status::Pending) {
+                _db->CompletePending(true);
+            }
+            _db->StopSession();
         }
     };
 
@@ -246,7 +258,7 @@ namespace Faster {
     //     _impl->remove(key);
     // }
 
-    std::optional<std::uint64_t> FasterKV::get(std::uint64_t key) const
+    std::optional<std::uint64_t> FasterKV::get(std::uint64_t key)
     {
         return _impl->get(key);
     }

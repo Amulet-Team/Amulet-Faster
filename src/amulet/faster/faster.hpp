@@ -26,7 +26,7 @@ namespace Faster {
         // std::string get(std::string_view key) const;
         // void set(std::string_view key, std::string_view value);
         // void remove(std::string_view key);
-        std::optional<std::uint64_t> get(std::uint64_t key) const;
+        std::optional<std::uint64_t> get(std::uint64_t key);
         void set(std::uint64_t key, std::uint64_t value);
         void remove(std::uint64_t key);
     };
