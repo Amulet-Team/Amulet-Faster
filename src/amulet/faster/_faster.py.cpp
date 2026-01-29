@@ -76,6 +76,10 @@ void init_module(py::module m)
         },
         py::arg("key"),
         py::call_guard<py::gil_scoped_release>());
+    FasterKV.def(
+        "compact",
+        &Amulet::Faster::FasterKV::compact,
+        py::call_guard<py::gil_scoped_release>());
 }
 
 PYBIND11_MODULE(_faster, m)

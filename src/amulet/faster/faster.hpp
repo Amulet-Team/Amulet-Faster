@@ -29,6 +29,7 @@ namespace Faster {
         std::optional<std::uint64_t> get(std::uint64_t key);
         void set(std::uint64_t key, std::uint64_t value);
         void remove(std::uint64_t key);
+        void compact();
     };
 
 } // namespace Faster
